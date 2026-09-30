@@ -1,0 +1,54 @@
+name: Deploy Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_digest: 
+        description: "Image digest to deploy"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull exact image
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab@${{ inputs.image_digest }}
+
+      - name: Start container
+        run: |
+          docker run -d \
+            --name registry-lab-deployment \
+            -p 8080:80 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab@${{ inputs.image_digest }}
+
+      - name: Verify deployment
+        run: |
+          for i in {1..10}; do
+            if curl --fail --silent --show-error http://localhost:8080 | grep -q "Version 2"; then
+              echo "Deployment successful."
+              exit 0
+            fi
+
+            echo "Waiting for application..."
+            sleep 2
+          done
+
+          echo "Deployment verification failed."
+          exit 1
+
+      - name: Show deployed image
+        run: |
+          docker inspect registry-lab-deployment --format '{{.Image}}'
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f registry-lab-deployment
