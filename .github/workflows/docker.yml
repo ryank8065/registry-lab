@@ -64,4 +64,3 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:latest
-```
