@@ -37,18 +37,18 @@ jobs:
         run: |
           curl --fail http://localhost:8080 | grep "Version 2"
 
-      - name: Stop test container
-        if: always()
-        run: docker rm -f registry-test
-        
       - name: Scan image for vulnerabilities
         uses: docker/scout-action@v1
         with:
-        command: cves
-        image: ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:${{ github.sha }}
-        only-severities: critical,high
-        only-fixed: true
-        
+          command: cves
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:${{ github.sha }}
+          only-severities: critical,high
+          only-fixed: true
+
+      - name: Stop test container
+        if: always()
+        run: docker rm -f registry-test
+
       - name: Push image
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:${{ github.sha }}
