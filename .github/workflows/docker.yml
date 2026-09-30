@@ -1,3 +1,4 @@
+```yaml
 name: Build and Push Docker Image
 
 on:
@@ -35,8 +36,22 @@ jobs:
 
       - name: Test application
         run: |
-          sleep 3
-          curl --fail http://localhost:8080 | grep "Version 2"
+          for i in {1..10}; do
+            if curl --fail --silent --show-error http://localhost:8080 | grep -q "Version 2"; then
+              echo "Application is ready and content is correct."
+              exit 0
+            fi
+
+            echo "Application not ready yet. Attempt $i/10..."
+            sleep 2
+          done
+
+          echo "Application did not become ready."
+          exit 1
+
+      - name: Stop test container
+        if: always()
+        run: docker rm -f registry-test
 
       - name: Scan image for vulnerabilities
         uses: docker/scout-action@v1
@@ -46,11 +61,8 @@ jobs:
           only-severities: critical,high
           only-fixed: true
 
-      - name: Stop test container
-        if: always()
-        run: docker rm -f registry-test
-
       - name: Push image
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/registry-lab:latest
+```
