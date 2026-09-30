@@ -35,7 +35,7 @@ jobs:
 
       - name: Test application
         run: |
-          curl --fail http://localhost:8080
+          curl --fail http://localhost:8080 | grep "Version 2"
 
       - name: Stop test container
         if: always()
